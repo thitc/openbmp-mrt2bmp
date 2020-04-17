@@ -80,8 +80,8 @@ class LoggerThread(threading.Thread):
         self._log_cfg = log_cfg
         self._queue = queue
         self._log = init_main_logger(self._log_cfg)
-        self._stop = threading.Event()
-        print (log_cfg['handlers']['file']['filename'])
+        self._stopme = threading.Event()
+        #print (log_cfg['handlers']['file']['filename'])
 
     def run(self):
         """ Override """
@@ -103,9 +103,9 @@ class LoggerThread(threading.Thread):
                 break
 
     def stop(self):
-        self._stop.set()
+        self._stopme.set()
 
     def stopped(self):
-        return self._stop.isSet()
+        return self._stopme.isSet()
 
 

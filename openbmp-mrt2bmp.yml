@@ -13,7 +13,7 @@ collector:
 
 # Router views data config
 router_data:
-  master_directory_path: "router_data"   # Master directory of the routers data.
+  master_directory_path: "/var/run/openbmp/router_data"   # Master directory of the routers data.
   processed_directory_path: "processed_data" # Directory in which processed files will be stored.
   ignore_timestamp_interval_abnormality: True # If program will ignore file timestamp intervals.
   timestamp_interval_limit: 20 # Max number of minutes between two consecutive mrt files.
@@ -59,52 +59,52 @@ logging:
     # MRT Parser log messages
     mrt_parser:
       level: INFO
-      handlers: [file]
+      handlers: [console]
       propagate: no
 
     # MRT Processors log messages
     mrt_processors:
       level: INFO
-      handlers: [file]
+      handlers: [console]
       propagate: no
 
     # BMP Writer log messages
     bmp_writer:
       level: INFO
-      handlers: [file]
+      handlers: [console]
       propagate: no
 
     # BMP Writer log messages
     router_processor:
       level: INFO
-      handlers: [file]
+      handlers: [console]
       propagate: no
 
     # BMP Writer log messages
     rib_processor:
       level: INFO
-      handlers: [file]
+      handlers: [console]
       propagate: no
 
     # BMP Writer log messages
     updates_processor:
       level: INFO
-      handlers: [file]
+      handlers: [console]
       propagate: no
 
     # MRT Parser log messages
     route_views_synchronizer:
       level: INFO
-      handlers: [file]
+      handlers: [console]
       propagate: no
 
     # MRT Parser log messages
     ripe_synchronizer:
       level: INFO
-      handlers: [file]
+      handlers: [console]
       propagate: no
 
     # General/main program messages
     root:
       level: INFO
-      handlers: [file]
+      handlers: [console]

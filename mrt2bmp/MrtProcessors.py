@@ -333,7 +333,6 @@ class RouterProcessor:
                 tokens = f.split('.')
                 try:
                     date = tokens[2] + tokens[3]
-                    print(date[16:18])
                     date = datetime.datetime(int(date[0:4]), int(date[5:7]), int(date[8:10]), int(date[10:12]), int(date[13:15]), int(date[16:18]))
                     sorting_list.append((date, f))
                 except:
