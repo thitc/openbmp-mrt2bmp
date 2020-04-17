@@ -79,7 +79,7 @@ class RibProcessor():
                     raw_path_attributes = b"".join(e['raw_bgp_attributes'])
                     bucket_key = str(e['peer_index']) + str(hash(raw_path_attributes))
 
-                    if self.message_bucket_dict.has_key(bucket_key):
+                    if bucket_key in self.message_bucket_dict:
 
                         # Add the prefix to the corresponding MessageBucket.
                         self.message_bucket_dict[bucket_key].addPrefix(raw_prefix_nlri)
