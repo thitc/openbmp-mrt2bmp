@@ -8,11 +8,12 @@ import re
 import socket
 import datetime
 import traceback
-from struct import *
-from openbmp.mrt2bmp.HelperClasses import MessageBucket, moveFileToTempDirectory, BMP_Helper, BGP_Helper
-from openbmp.mrt2bmp.MrtParser import MrtParser
-from openbmp.mrt2bmp.CollectorSender import BMPWriter
-from openbmp.mrt2bmp.logger import init_mp_logger
+import struct
+from struct import calcsize, pack
+from mrt2bmp.HelperClasses import MessageBucket, moveFileToTempDirectory, BMP_Helper, BGP_Helper
+from mrt2bmp.MrtParser import MrtParser
+from mrt2bmp.CollectorSender import BMPWriter
+from mrt2bmp.logger import init_mp_logger
 
 MRT_TYPES = {
     11: 'OSPFv2',
@@ -332,7 +333,8 @@ class RouterProcessor:
                 tokens = f.split('.')
                 try:
                     date = tokens[2] + tokens[3]
-                    date = datetime.datetime(int(date[0:4]), int(date[4:6]), int(date[6:8]), int(date[8:10]), int(date[10:]))
+                    print(date[16:18])
+                    date = datetime.datetime(int(date[0:4]), int(date[5:7]), int(date[8:10]), int(date[10:12]), int(date[13:15]), int(date[16:18]))
                     sorting_list.append((date, f))
                 except:
                     self.LOG.warn("%s is not correctly formatted, skipping" % f)
@@ -616,7 +618,7 @@ class RouteViewsProcessor(multiprocessing.Process):
             self.LOG.info("- %s is ended" % str(self.router_name))
 
         except:
-            print sys.exc_info()[0]
+            print (sys.exc_info()[0])
             traceback.print_exc()
 
     def stop(self):

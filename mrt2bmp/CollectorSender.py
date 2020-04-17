@@ -11,10 +11,10 @@
 import socket
 import multiprocessing
 import time
-import Queue
+import queue
 
 from time import sleep
-from openbmp.mrt2bmp.logger import init_mp_logger
+from mrt2bmp.logger import init_mp_logger
 
 class BMPWriter(multiprocessing.Process):
     """ BMP Writer

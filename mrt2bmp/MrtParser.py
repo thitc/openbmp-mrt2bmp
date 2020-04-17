@@ -1,9 +1,11 @@
 
 import gzip
 import bz2
-from struct import *
-from HelperClasses import *
+import struct
+from struct import unpack
+import mrt2bmp.HelperClasses
 import binascii
+import socket
 
 GZIP_HEADER = b'\x1f\x8b'
 BZ2_HEADER = b'\x42\x5a\x68'
@@ -150,7 +152,7 @@ class MrtParser():
             mrt_header['timestamp'], mrt_header['type'], mrt_header['subtype'], mrt_header['length'] = unpack('!I H H I', buf)
 
         except MrtFileException as e:
-            print 'Mrt File exception occurred: ', e.value
+            print ('Mrt File exception occurred: ', e.value)
             self.close()
 
     def parseMrtEntry(self, mrt_message, msg_len, msg_type, msg_subtype):
@@ -159,7 +161,7 @@ class MrtParser():
             buf = self.f.read(msg_len)
 
             if len(buf) < msg_len:
-                raise MrtFileException("Mrt message (data) length is %d < %d (message length)", len(buf), msg_len)
+                raise MrtFileException(("Mrt message (data) length is %d < %d (message length)", len(buf), msg_len))
 
             if MRT_TYPES[msg_type] == 'TABLE_DUMP_V2':
                 self.parseTableDumpV2(buf, mrt_message, msg_len, msg_type, msg_subtype)
@@ -168,7 +170,7 @@ class MrtParser():
                 self.parseBGP4MP(buf, mrt_message, msg_len, msg_type, msg_subtype)
 
         except MrtFileException as e:
-            print 'Mrt File exception occurred: ', e.value
+            print ('Mrt File exception occurred: ', e.value)
             self.close()
 
     def parseTableDumpV2(self, buf, mrt_message, msg_len, msg_type, msg_subtype):

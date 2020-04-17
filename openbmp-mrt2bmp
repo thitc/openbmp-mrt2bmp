@@ -16,10 +16,10 @@ import sys
 import signal
 from multiprocessing import Queue, Manager, Lock
 
-from openbmp.mrt2bmp.logger import LoggerThread
-from openbmp.mrt2bmp.MrtProcessors import RouteViewsProcessor
-from openbmp.mrt2bmp.RouteDataSynchronizer import RouteDataSynchronizer
-from openbmp.mrt2bmp.RipeSynchronizer import RipeSynchronizer
+from mrt2bmp.logger import LoggerThread
+from mrt2bmp.MrtProcessors import RouteViewsProcessor
+from mrt2bmp.RouteDataSynchronizer import RouteDataSynchronizer
+from mrt2bmp.RipeSynchronizer import RipeSynchronizer
 
 # Root logger
 LOG = None
@@ -47,7 +47,7 @@ def signal_handler(signum, frame):
     if LOG:
         LOG.info("Caught signal %d, exiting", signum)
     else:
-        print "Caught signal %d, exiting" % signum
+        print ("Caught signal %d, exiting" % signum)
 
     RUNNING = False
 
@@ -64,7 +64,8 @@ def load_config(cfg_filename, LOG):
     cfg = {}
 
     try:
-        cfg = yaml.load(file(cfg_filename, 'r'))
+        with open(cfg_filename,'r') as yaml_file:
+            cfg = yaml.load(yaml_file, Loader=yaml.FullLoader)
 
         if 'collector' in cfg:
             if 'host' not in cfg['collector']:
@@ -96,11 +97,11 @@ def load_config(cfg_filename, LOG):
                 print ("Configuration is missing 'logging' section.")
             sys.exit(2)
 
-    except (IOError, yaml.YAMLError), e:
-        print "Failed to load mapping config file '%s': %r" % (cfg_filename, e)
-        if hasattr(e, 'problem_mark'):
-            mark = e.problem_mark
-            print ("error on line: %s, column: %s" % (mark.line+1, mark.column+1))
+    except (IOError, yaml.YAMLError) as e:
+        print ("Failed to load mapping config file '%s': %r" % (cfg_filename, e))
+        #if hasattr(e, 'problem_mark'):
+            #mark = e.problem_mark
+            #print ("error on line: %s, column: %s" % (mark.line+1, mark.column+1))
 
         sys.exit(2)
 
@@ -112,19 +113,19 @@ def usage(prog):
 
         :param prog:  Program name
     """
-    print ""
-    print "Usage: %s [OPTIONS]" % prog
-    print ""
+    print ("")
+    print ("Usage: %s [OPTIONS]" % prog)
+    print ("")
 
-    print "OPTIONS:"
-    print "  -h, --help".ljust(30) + "Print this help menu"
-    print "  -c, --config".ljust(30) + "Config filename (default is %s/etc/openbmp-mrt2bmp.yml)" % sys.prefix
-    print "  -r, --router".ljust(30) + "Router name which you want to run with your MRT files"
-    print "  --rv, --routeviews".ljust(30) + "Router name which you want to run from routeviews.org"
-    print "  --rv list, --routeviews list".ljust(30) + "Print name of routers from routeviews.org"
-    print "  --rp, --ripe".ljust(30) + "Router name which you want to run from RIPE"
-    print "  --rp list, --ripe list".ljust(30) + "Print name of routers from RIPE"
-    print ""
+    print ("OPTIONS:")
+    print ("  -h, --help".ljust(30) + "Print this help menu")
+    print ("  -c, --config".ljust(30) + "Config filename (default is %s/etc/openbmp-mrt2bmp.yml)" % sys.prefix)
+    print ("  -r, --router".ljust(30) + "Router name which you want to run with your MRT files")
+    print ("  --rv, --routeviews".ljust(30) + "Router name which you want to run from routeviews.org")
+    print ("  --rv list, --routeviews list".ljust(30) + "Print name of routers from routeviews.org")
+    print ("  --rp, --ripe".ljust(30) + "Router name which you want to run from RIPE")
+    print ("  --rp list, --ripe list".ljust(30) + "Print name of routers from RIPE")
+    print ("")
 
 def parse_cmd_args(argv):
     """ Parse commandline arguments and load the configuration file
@@ -159,10 +160,10 @@ def parse_cmd_args(argv):
 
                 if a == "list":
                     # Print list of routers from routeviews.org
-                    print "List of routers from routeviews.org"
+                    print ("List of routers from routeviews.org")
 
                     for r in list_of_routers:
-                        print "- %s" % r[0]
+                        print ("- %s" % r[0])
 
                     sys.exit(0)
 
@@ -182,17 +183,17 @@ def parse_cmd_args(argv):
 
             elif o in ("--rp", "--ripe"):
 
-                print "Ripe is chosen..."
+                print ("Ripe is chosen...")
                 list_of_routers = []
 
                 if a[:5] == "list-":
                     list_of_routers = RipeSynchronizer.getListOfRouters(a[5:])
 
                     # Print list of routers from routeviews.org
-                    print "List of routers from ripe.net"
+                    print ("List of routers from ripe.net")
 
                     for r in list_of_routers:
-                        print "- %s" % r[0]
+                        print ("- %s" % r[0])
 
                     sys.exit(0)
 
@@ -214,7 +215,7 @@ def parse_cmd_args(argv):
                 sys.exit(1)
 
     except getopt.GetoptError as err:
-        print str(err)  # will print something like "option -a not recognized"
+        print (str(err))  # will print something like "option -a not recognized"
         usage(argv[0])
         sys.exit(2)
 
@@ -284,7 +285,7 @@ def main():
             time.sleep(3)
 
         except KeyboardInterrupt:
-            print "\nStop requested by user"
+            print ("\nStop requested by user")
             RUNNING = False
             break
 
@@ -305,7 +306,7 @@ def main():
     thread_logger.stop()
     thread_logger.join()
 
-    print "Openbmp Mrt2Bmp is finished"
+    print ("Openbmp Mrt2Bmp is finished")
 
     sys.exit(0)
 

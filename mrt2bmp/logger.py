@@ -12,7 +12,7 @@ import logging.handlers
 import logging.config
 import threading
 
-from Queue import Empty
+from queue import Empty
 
 def init_main_logger(config):
     """ Initialize a new main logger instance
@@ -81,7 +81,7 @@ class LoggerThread(threading.Thread):
         self._queue = queue
         self._log = init_main_logger(self._log_cfg)
         self._stop = threading.Event()
-        print log_cfg['handlers']['file']['filename']
+        print (log_cfg['handlers']['file']['filename'])
 
     def run(self):
         """ Override """

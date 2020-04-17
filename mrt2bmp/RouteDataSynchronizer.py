@@ -1,4 +1,4 @@
-import urllib2
+from urllib.request import urlopen
 import os
 import time
 import datetime
@@ -9,7 +9,7 @@ import errno
 import socket
 from threading import Thread, Lock
 from multiprocessing import Manager, Process
-from openbmp.mrt2bmp.logger import init_mp_logger
+from mrt2bmp.logger import init_mp_logger
 
 NAME_OF_DOWNLOAD_TRACK_FILE = "download_track.json"
 
@@ -37,32 +37,19 @@ class Downloader_Thread(Thread):
 
                 path_parts = df[0].split("/")
 
-                prefix_type = ""
-                if "bview" in df[0]:
-                    prefix_type = "RIBS"
-
-                elif "updates" in df[0]:
-                    prefix_type = "UPDATES"
-
-
-                path = os.path.join(self.route_view_dir_path, df[1], path_parts[-2], prefix_type, path_parts[-1])
-
-                key = os.path.join(path_parts[-2], prefix_type, path_parts[-1])
+                path = os.path.join(self.route_view_dir_path, df[1], path_parts[-3], path_parts[-2], path_parts[-1])
+                key = os.path.join(path_parts[-3], path_parts[-2], path_parts[-1])
 
                 # Create temporary path to download the mrt file.
                 temp_file_name = 'download-mrt'
-                temp_path = os.path.join(self.route_view_dir_path, df[1], path_parts[-2], prefix_type, temp_file_name)
+                temp_path = os.path.join(self.route_view_dir_path, df[1], path_parts[-3], path_parts[-2], temp_file_name)
 
                 self.downloadHTTPFile(temp_path, df, key, path)
 
                 self.download_queue.task_done()
 
             except EOFError as e:
-                print e
-                break
-
-            except IOError as e:
-                print e
+                print (e)
                 break
 
     def downloadHTTPFile(self, temp_path, df, key, path):
@@ -72,13 +59,12 @@ class Downloader_Thread(Thread):
         while True:
 
             try:
-
                 # Check if there is existing .download file, then delete it.
                 if os.path.isfile(temp_path):
                     os.remove(temp_path)
 
                 # Get file size and last modification date.
-                url_handle = urllib2.urlopen(url, None, 5.0)
+                url_handle = urlopen(url, None, 5.0)
                 headers = url_handle.info()
 
                 etag = headers.getheader("ETag")[1:-1]
@@ -89,7 +75,6 @@ class Downloader_Thread(Thread):
 
                 if not self.__checkFileMetadataInDownloadTrack(df[1], key, etag,
                                                                last_modified) and time_difference_minutes >= 3 and file_size > 14:
-
                     # Download the file.
                     chunk_size = 1024 * 256
 
@@ -113,11 +98,11 @@ class Downloader_Thread(Thread):
                         # Save downloaded file info in track file.
                         self.__addFileMetadataToDownloadTrack(df[1], key, etag, last_modified)
 
-            except urllib2.URLError, e:
-
+            except url_handle.error.URLError as e:
+                #print "Timed out..."
                 time.sleep(1)
 
-            except IOError, e:
+            except IOError as e:
 
                 if e.errno == errno.EPERM:
                     self.LOG.error("Permission denied to write the file to filesystem !!!")
@@ -152,7 +137,7 @@ class Downloader_Thread(Thread):
                 json.dump(data, f, sort_keys=True, indent=4)
 
         except:
-            print sys.exc_info()[0]
+            print (sys.exc_info()[0])
 
     def __checkFileMetadataInDownloadTrack(self, router_name, file_url, etag, file_modification_date):
 
@@ -174,10 +159,10 @@ class Downloader_Thread(Thread):
                 return False
 
         except:
-            print sys.exc_info()[0]
+            print (sys.exc_info()[0])
 
 
-class RipeSynchronizer(Process):
+class RouteDataSynchronizer(Process):
 
     def __init__(self, cfg, log_queue, sync_mutex, router_name):
         Process.__init__(self)
@@ -188,13 +173,13 @@ class RipeSynchronizer(Process):
         self.sync_mutex = sync_mutex
         self._log_queue = log_queue
 
-        self.LOG = init_mp_logger("ripe_synchronizer", self._log_queue)
+        self.LOG = init_mp_logger("route_views_synchronizer", self._log_queue)
 
         try:
 
             self.manager = Manager()
 
-            self.web_address = cfg['router_data']['ripe_sync']['web_source_address']
+            self.web_address = cfg['router_data']['route_views_sync']['web_source_address']
             self.route_view_dir_path = cfg['router_data']['master_directory_path']
 
             self.downloader_thread = None
@@ -205,12 +190,12 @@ class RipeSynchronizer(Process):
 
             # Create a queue for the router.
             self.download_queue = self.manager.Queue(
-                self.cfg['router_data']['ripe_sync']['max_download_queue_size'])
+                self.cfg['router_data']['route_views_sync']['max_download_queue_size'])
 
             self.__createDownloaderThread(self.router_name)
 
         except IOError as e:
-            print e
+            print (e)
 
     def run(self):
         """ Override """
@@ -229,21 +214,19 @@ class RipeSynchronizer(Process):
                 router = None
                 for r,k in routers:
                     if r == self.router_name:
-
                         router = (r,k)
                         router_exists = True
 
                 if not router_exists:
-                    self.LOG.error("'%s' is not a valid router on ripe.net" % self.router_name)
+                    self.LOG.error("'%s' is not a valid router on routeviews.org" % self.router_name)
                     sys.exit(2)
 
                 if not self.stopped():
 
-                    url = router[1] + '/'
-
+                    url = self.web_address + router[1] + '/'
                     router_name = router[0]
 
-                    html = RipeSynchronizer.makeHTTPRequest(url + "/?C=M;O=D")
+                    html = RouteDataSynchronizer.makeHTTPRequest(url)
 
                     if html.find('alt="[DIR]"') != -1:
 
@@ -254,14 +237,16 @@ class RipeSynchronizer(Process):
                         for n, l in enumerate(file_list_html):
                             file_list_html[n] = l[:l.find('">')]
 
+                        file_list_html.sort(reverse=True)
+
                         for link in file_list_html:
 
-                            if link[0:2] == '20' and not self.stopped():
+                            if link != 'SH_IP_BGP/' and not self.stopped():
                                 url_link = url + link
 
                                 result = self.__findLatestMrtFiles(url_link, router_name)
 
-                                if result is True:
+                                if result is not None:
                                     break
 
                 self.download_queue.join()
@@ -269,105 +254,53 @@ class RipeSynchronizer(Process):
                 # Unlock the mutex
                 self.sync_mutex.release()
 
-                # Waits for 3 min
-                time.sleep(180)
+                # Waits for 5 min
+                time.sleep(10)
 
         except KeyboardInterrupt:
-            print "Stopped by user"
+            print ("Stopped by user")
             self.stop()
 
         except (EOFError, IOError) as e:
-            print e
+            print (e)
 
     def __findLatestMrtFiles(self, url, router_name):
 
-        rib_date = None
-        file_list_html = []
-        returnValue = True
+        date = None
 
         try:
 
-            html = RipeSynchronizer.makeHTTPRequest(url + "/?C=M;O=D")
+            html = RouteDataSynchronizer.makeHTTPRequest(url)
 
-            file_path = os.path.join(self.route_view_dir_path, router_name, NAME_OF_DOWNLOAD_TRACK_FILE)
-
-            # Add file metadata to the corresponding file.
-            with open(file_path) as f:
-                data = json.load(f)
-
-            if html.find('alt="[   ]"') != -1:
-
-                # Last depth directory, it has list of mrt files.
-                file_list_html = html.split('alt="[   ]"></td><td><a href="')
+            if html.find('alt="[DIR]"') != -1:
+                # Directory listing html.
+                file_list_html = html.split('alt="[DIR]"></td><td><a href="')
                 del file_list_html[0]
 
-                # Find latest rib.
-                for l in file_list_html:
-                    if "bview" in l:
+                l = file_list_html[0]
+                link = l[:l.find('">')]
+                url_link = url + link
 
-                        link = l[:l.find('">')]
+                if link == "RIBS/":
 
-                        # Check if file exists in the router's download track file.
-                        url_link = url + link
-                        url_parts = url_link.split("/")
+                    date = self.__findLatestRibFile(url_link, router_name)
 
-                        # Search the link in the download track file.
-                        # If it does not exist, then delete whole router directory and create again.
+                l = file_list_html[1]
+                link = l[:l.find('">')]
+                url_link = url + link
 
-                        path_parts = url_link.split("/")
+                if link == "UPDATES/" and date is not None:
 
-                        key = os.path.join(path_parts[-2], "RIBS", path_parts[-1])
+                    self.__findLatestUpdateFiles(url_link, router_name, date)
 
-                        if data.get(key) is None:
-                            self.__createDirIfNotExist(os.path.join(self.route_view_dir_path, router_name, url_parts[-2], "RIBS"))
-
-                            self.download_queue.put((url_link, router_name))
-
-                        # Parse date of the file.
-                        tokens = link.split('.')
-                        date = tokens[1] + tokens[2]
-                        rib_date = datetime.datetime(int(date[0:4]), int(date[4:6]), int(date[6:8]), int(date[8:10]),
-                                                 int(date[10:]))
-
-                        break
-
-                # Find latest rib.
-                for l in file_list_html:
-
-                    if "updates" in l:
-
-                        link = l[:l.find('">')]
-
-                        # Check if file exists in the router's download track file.
-                        url_link = url + link
-                        url_parts = url_link.split("/")
-
-                        path_parts = url_link.split("/")
-
-                        key = os.path.join(path_parts[-2], "UPDATES", path_parts[-1])
-
-                        # Parse date of the file.
-                        tokens = link.split('.')
-                        date = tokens[1] + tokens[2]
-                        date = datetime.datetime(int(date[0:4]), int(date[4:6]), int(date[6:8]), int(date[8:10]),
-                                                 int(date[10:]))
-
-                        if data.get(key) is None and date >= rib_date:
-                            self.__createDirIfNotExist(os.path.join(self.route_view_dir_path, router_name, url_parts[-2], "UPDATES"))
-
-                            self.download_queue.put((url_link, router_name))
-
-            returnValue = len(file_list_html) > 0
-
-        except Exception as e:
-            print e
+        except IOError as e:
+            print (e)
 
         except KeyboardInterrupt:
             self.stop()
 
         finally:
-            return returnValue
-
+            return date
 
     def __findLatestRibFile(self, url, router_name):
 
@@ -375,7 +308,7 @@ class RipeSynchronizer(Process):
 
         try:
 
-            html = RipeSynchronizer.makeHTTPRequest(url + "/?C=M;O=D")
+            html = RouteDataSynchronizer.makeHTTPRequest(url)
 
             if html.find('alt="[   ]"') != -1:
 
@@ -416,7 +349,7 @@ class RipeSynchronizer(Process):
                 date = datetime.datetime(int(date[0:4]), int(date[4:6]), int(date[6:8]), int(date[8:10]), int(date[10:]))
 
         except IOError as e:
-            print e
+            print (e)
 
         except KeyboardInterrupt:
             self.stop()
@@ -428,7 +361,7 @@ class RipeSynchronizer(Process):
 
         try:
 
-            html = RipeSynchronizer.makeHTTPRequest(url + "/?C=M;O=D")
+            html = RouteDataSynchronizer.makeHTTPRequest(url)
 
             if html.find('alt="[   ]"') != -1:
                 # Last depth directory, it has list of mrt files.
@@ -456,7 +389,7 @@ class RipeSynchronizer(Process):
                         self.download_queue.put((url_link, router_name))
 
         except IOError as e:
-            print e
+            print (e)
 
         except KeyboardInterrupt:
             pass
@@ -488,28 +421,29 @@ class RipeSynchronizer(Process):
 
         router_list = []
 
-        html = RipeSynchronizer.makeHTTPRequest(web_address)
+        html = RouteDataSynchronizer.makeHTTPRequest(web_address)
 
-        list_start = html.find('Click on a collector to get a list of available files. Files are grouped collector by collector, then month by month')
-        list_end = html.find('This data is made available for researchers without restrictions')
+        list_start = html.find("<LI>")
+        list_end = html.find("</LI>")
 
         # Get routers html block.
-        all_routers_html = html[list_start+127:list_end-23]
+        all_routers_html = html[list_start+4:list_end-6]
 
         # Get list of router htmls.
-        list_of_routers_html = all_routers_html.split("</li>")
+        list_of_routers_html = all_routers_html.split("<br>")
 
-        del list_of_routers_html[len(list_of_routers_html) - 1]
+        # Delete last element because last link is not a router.
+        del list_of_routers_html[len(list_of_routers_html)-1]
 
         for r in list_of_routers_html:
-            start_of_link = r.find('href="')
-            end_of_link = r.find('"', start_of_link+7)
-            router_link = r[start_of_link + 6:end_of_link]
+            router_link = r[r.find('HREF="') + 6:r.find('">')]
 
-            start_index_name = r.find('">', end_of_link)
-            end_index_name = r.find('</a>', end_of_link)
+            start_index_name = r.rfind('quagga bgpd') + 18
 
-            router_name = r[start_index_name+2:end_index_name].strip()
+            end_index_1 = r.find(')', start_index_name)
+            end_index_2 = r.find(' ', start_index_name)
+
+            router_name = r[start_index_name:min(end_index_1,end_index_2)].strip()
 
             router_list.append((router_name, router_link))
 
@@ -541,13 +475,12 @@ class RipeSynchronizer(Process):
         while True:
 
             try:
-                response = urllib2.urlopen(web_address, None, 15.0)
+                response = urlopen(web_address, None, 5.0)
                 data = response.read()
 
-            except (urllib2.URLError, IOError) as e:
+            except (response.error.URLError, IOError):
 
-                print "Trying connecting again to %s" % web_address
-                print e
+                #print "Trying connecting again to %s" % web_address
                 time.sleep(2)
 
             else:

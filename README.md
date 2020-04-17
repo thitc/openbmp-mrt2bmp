@@ -51,11 +51,11 @@ You can find example router directory structure in **src/etc/example_routers**. 
 > - **Router directory:** Directory in which router's subdirectories are stored. Name of this directory will be the router name.
 > - **Subdirectory:** Subdirectories in which **RIBS** and **UPDATES** directories are stored. Name of these directories must be in format **YYYY.MM**. e.g. "2017.03"
 > - **RIBS Directory:** Directory in which **RIB** files are stored. Name of this directory must be "RIBS".
-<br> - File name of a **RIB** file must be in format **"rib.YYYYMMDD.HHMM"** or **"bview.YYYYMMDD.HHMM"**. e.g. **"rib.20170222.1600"**, **"bview.20170222.1600"**
+<br> - File name of a **RIB** file must be in format **"rib.YYYY-MM-DD.HH:MM:SS"** or **"bview.YYYY-MM-DD.HH:MM:SS"**. e.g. **"rib.2020-04-17.09:54:48"**, **"bview.2020-04-17.09:54:48"**
 > - **UPDATES Directory:** Directory in which **UPDATES** files are stored. Name of this directory must be "UPDATES".
-<br> - File name of a **UPDATES** file must be in format **"updates.YYYYMMDD.HHMM"**. e.g. **"updates.20170222.1600"**
+<br> - File name of a **UPDATES** file must be in format **"updates.YYYY-MM-DD.HH:MM:SS"**. e.g. **"updates.2020-04-17.09:54:48"**
 
-> **RIB** and **UPDATES** files can have **.gzip**, **.bz2** and **.gz** file format extensions in their file names. e.g. "rib.20170222.1600.gzip", "rib.20170222.1600.bz2", "updates.20170222.1600.gz"
+> **RIB** and **UPDATES** files can have **.gzip**, **.bz2** and **.gz** file format extensions in their file names. e.g. "rib.2020-04-17.09:54:48.gzip", "rib.2020-04-17.09:54:48.bz2", "updates.2020-04-17.09:54:48.gz"
 
 ### Router Directory Structure
 
