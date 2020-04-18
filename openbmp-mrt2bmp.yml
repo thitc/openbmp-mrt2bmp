@@ -58,53 +58,53 @@ logging:
   loggers:
     # MRT Parser log messages
     mrt_parser:
-      level: INFO
+      level: DEBUG
       handlers: [console]
       propagate: no
 
     # MRT Processors log messages
     mrt_processors:
-      level: INFO
+      level: DEBUG
       handlers: [console]
       propagate: no
 
     # BMP Writer log messages
     bmp_writer:
-      level: INFO
+      level: DEBUG
       handlers: [console]
       propagate: no
 
     # BMP Writer log messages
     router_processor:
-      level: INFO
+      level: DEBUG
       handlers: [console]
       propagate: no
 
     # BMP Writer log messages
     rib_processor:
-      level: INFO
+      level: DEBUG
       handlers: [console]
       propagate: no
 
     # BMP Writer log messages
     updates_processor:
-      level: INFO
+      level: DEBUG
       handlers: [console]
       propagate: no
 
     # MRT Parser log messages
     route_views_synchronizer:
-      level: INFO
+      level: DEBUG
       handlers: [console]
       propagate: no
 
     # MRT Parser log messages
     ripe_synchronizer:
-      level: INFO
+      level: DEBUG
       handlers: [console]
       propagate: no
 
     # General/main program messages
     root:
-      level: INFO
+      level: DEBUG
       handlers: [console]

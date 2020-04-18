@@ -394,10 +394,13 @@ def moveFileToTempDirectory(src_file_path, dst_dir_path):
     try:
 
         # Checks if dst directory exists. If not, then creates the directory structure.
-        if not os.path.isdir(dst_dir_path):
-            os.makedirs(dst_dir_path)
+        #if not os.path.isdir(dst_dir_path):
+        #   os.makedirs(dst_dir_path)
+        #shutil.move(src_file_path, dst_dir_path)
+        os.remove(src_file_path)
+        #pass
 
-        shutil.move(src_file_path, dst_dir_path)
 
     except shutil.Error as e:
+        print(e)
         pass

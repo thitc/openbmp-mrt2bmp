@@ -304,8 +304,10 @@ class RouterProcessor:
         for d in os.listdir(self.working_dir):
 
             if not self._date_dir_regex.match(d):
-                # self.LOG.info("Skipping over directory %s" % d)
+                self.LOG.info("Skipping over directory %s" % d)
                 continue
+            else:
+                self.LOG.debug("Use directory %s" % d)
 
             if os.path.isdir(os.path.join(self.working_dir, d)):
                 listOfRibs = []
@@ -315,11 +317,15 @@ class RouterProcessor:
                 update_path = os.path.join(self.working_dir, d, "UPDATES")
 
                 if os.path.isdir(rib_path):
+                    self.LOG.debug("Found folder: RIBS")
                     listOfRibs = os.listdir(rib_path)
+                    self.LOG.debug("Found files in RIBS: %s", os.listdir(rib_path))
                     listOfRibs = [os.path.join(d,"RIBS",e) for e in listOfRibs]
 
                 if os.path.isdir(update_path):
+                    self.LOG.debug("Found folder: UPDATES")
                     listOfUpdates = os.listdir(update_path)
+                    self.LOG.debug("Found files in UPDATES: %s", os.listdir(update_path))
                     listOfUpdates = [os.path.join(d, "UPDATES", e) for e in listOfUpdates]
 
                 self._listOfRibAndUpdateFiles = self._listOfRibAndUpdateFiles + listOfRibs + listOfUpdates
@@ -468,12 +474,13 @@ class RouterProcessor:
         # sysDescr tlv creation
         f1 = '!H H 1s'
         s1 = calcsize(f1)
-        sysDescr_data = pack(f1, 1, 1, ' ')
+        sysDescr_data = struct.pack(f1, 1, 1, b' ')
 
         # sysName tlv creation
         f2 = '!H H ' + str(len(self._router_name)) + 's'
         s2 = calcsize(f2)
-        sysName_data = pack(f2, 2, len(self._router_name), self._router_name)
+
+        sysName_data = struct.pack(f2, 2, len(self._router_name), self._router_name.encode())
 
         common_header = BMP_Helper.createBmpCommonHeader(3, s1 + s2 + 6, 4)
 
@@ -526,8 +533,8 @@ class RouterProcessor:
                     if is_first_run:
                         rp.processRibFile()
 
-                    moveFileToTempDirectory(os.path.join(self.working_dir, f[1]),
-                                            os.path.join(self._processed_directory_path, self._router_name, "RIBS"))
+                    self.LOG.debug('Delete RIB file: %s', os.path.join(self.working_dir, f[1]))
+                    moveFileToTempDirectory(os.path.join(self.working_dir, f[1]), os.path.join(self._processed_directory_path, self._router_name, "RIBS"))
 
                 elif "updates" in f[1]:
 
@@ -535,10 +542,10 @@ class RouterProcessor:
                         up = UpdateProcessor(f[1], self._directory_path, self._router_name, self._collector_id, self._fwd_queue, self._log_queue)
                         up.processUpdateFile()
                     except:
-                        traceback.print_exc();
+                        traceback.print_exc()
 
-                    moveFileToTempDirectory(os.path.join(self.working_dir, f[1]),
-                                            os.path.join(self._processed_directory_path, self._router_name, "UPDATES"))
+                    self.LOG.debug('Delete UPDATES file: %s', os.path.join(self.working_dir, f[1]))
+                    moveFileToTempDirectory(os.path.join(self.working_dir, f[1]), os.path.join(self._processed_directory_path, self._router_name, "UPDATES"))
 
                 self.LOG.info("-- %s is ended" % f[1])
 
@@ -611,6 +618,7 @@ class RouteViewsProcessor(multiprocessing.Process):
                 self._sync_mutex.release()
 
                 # Waits for 30 seconds and runs the route views processor again.
+                self.LOG.debug('Nothing to do... Sleeping for 30 seconds... zZzZz')
                 time.sleep(30)
 
         except KeyboardInterrupt:
