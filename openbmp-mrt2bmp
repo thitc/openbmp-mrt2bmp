@@ -14,6 +14,7 @@ import logging
 import time
 import sys
 import signal
+import os
 from multiprocessing import Queue, Manager, Lock
 
 from mrt2bmp.logger import LoggerThread
@@ -143,81 +144,95 @@ def parse_cmd_args(argv):
     global USE_ROUTE_VIEWS
     global USE_RIPE
 
-    try:
-        (opts, args) = getopt.getopt(argv[1:], "hc:r:r:",["help", "config=", "routeviews=", "rv=", "rp="])
+    USE_RIPE = False
+    USE_ROUTE_VIEWS = False
 
-        for o, a in opts:
-            if o in ("-h", "--help"):
-                usage(argv[0])
-                sys.exit(0)
+    #Load default cfg
+    cfg['cfg_filename'] = 'openbmp-mrt2bmp.yml'
 
-            elif o in ("-c", "--config"):
-                cfg['cfg_filename'] = a
 
-            elif o in ("--rv", "--routeviews"):
+    if 'MRT_ROUTER' in os.environ:
+        cfg['router_name'] = os.environ.get('MRT_ROUTER')
+    else:
+        print('Env var MRT_ROUTER not set. Exit')
+        sys.exit(1)
 
-                list_of_routers = RouteDataSynchronizer.getListOfRouters("http://routeviews.org")
 
-                if a == "list":
-                    # Print list of routers from routeviews.org
-                    print ("List of routers from routeviews.org")
+    # try:
+    #     (opts, args) = getopt.getopt(argv[1:], "hc:r:r:",["help", "config=", "routeviews=", "rv=", "rp="])
 
-                    for r in list_of_routers:
-                        print ("- %s" % r[0])
+    #     for o, a in opts:
+    #         if o in ("-h", "--help"):
+    #             usage(argv[0])
+    #             sys.exit(0)
 
-                    sys.exit(0)
+    #         elif o in ("-c", "--config"):
+    #             cfg['cfg_filename'] = a
 
-                else:
-                    router_exists = False
+    #         elif o in ("--rv", "--routeviews"):
 
-                    for r, k in list_of_routers:
-                        if r == a:
-                            router_exists = True
+    #             list_of_routers = RouteDataSynchronizer.getListOfRouters("http://routeviews.org")
 
-                    if not router_exists:
-                        print("'%s' is not a valid router on routeviews.org" % a)
-                        sys.exit(2)
+    #             if a == "list":
+    #                 # Print list of routers from routeviews.org
+    #                 print ("List of routers from routeviews.org")
 
-                    cfg['router_name'] = a
-                    USE_ROUTE_VIEWS = True
+    #                 for r in list_of_routers:
+    #                     print ("- %s" % r[0])
 
-            elif o in ("--rp", "--ripe"):
+    #                 sys.exit(0)
 
-                print ("Ripe is chosen...")
-                list_of_routers = []
+    #             else:
+    #                 router_exists = False
 
-                if a[:5] == "list-":
-                    list_of_routers = RipeSynchronizer.getListOfRouters(a[5:])
+    #                 for r, k in list_of_routers:
+    #                     if r == a:
+    #                         router_exists = True
 
-                    # Print list of routers from routeviews.org
-                    print ("List of routers from ripe.net")
+    #                 if not router_exists:
+    #                     print("'%s' is not a valid router on routeviews.org" % a)
+    #                     sys.exit(2)
 
-                    for r in list_of_routers:
-                        print ("- %s" % r[0])
+    #                 cfg['router_name'] = a
+    #                 USE_ROUTE_VIEWS = True
 
-                    sys.exit(0)
+    #         elif o in ("--rp", "--ripe"):
 
-                else:
-                    cfg['router_name'] = a
-                    USE_RIPE = True
+    #             print ("Ripe is chosen...")
+    #             list_of_routers = []
 
-            elif o in ("-r", "--router"):
-                cfg['router_name'] = a
+    #             if a[:5] == "list-":
+    #                 list_of_routers = RipeSynchronizer.getListOfRouters(a[5:])
 
-                USE_ROUTE_VIEWS = False
+    #                 # Print list of routers from routeviews.org
+    #                 print ("List of routers from ripe.net")
 
-                # If router is blank, then error out.
-                if cfg['router_name'].strip() == "":
-                    raise getopt.GetoptError
+    #                 for r in list_of_routers:
+    #                     print ("- %s" % r[0])
 
-            else:
-                usage(argv[0])
-                sys.exit(1)
+    #                 sys.exit(0)
 
-    except getopt.GetoptError as err:
-        print (str(err))  # will print something like "option -a not recognized"
-        usage(argv[0])
-        sys.exit(2)
+    #             else:
+    #                 cfg['router_name'] = a
+    #                 USE_RIPE = True
+
+    #         elif o in ("-r", "--router"):
+    #             cfg['router_name'] = a
+
+    #             USE_ROUTE_VIEWS = False
+
+    #             # If router is blank, then error out.
+    #             if cfg['router_name'].strip() == "":
+    #                 raise getopt.GetoptError
+
+    #         else:
+    #             usage(argv[0])
+    #             sys.exit(1)
+
+    # except getopt.GetoptError as err:
+    #     print (str(err))  # will print something like "option -a not recognized"
+    #     usage(argv[0])
+    #     sys.exit(2)
 
     return cfg
 
@@ -234,7 +249,14 @@ def main():
     # Shared dictionary between processes
     manager = Manager()
     cfg_dict = manager.dict()
-    cfg_dict['collector'] = cfg['collector']
+    #cfg_dict['collector'] = cfg['collector'] 
+
+    if 'COLLECTOR_FQDN' in os.environ:
+        cfg_dict['collector'] = {'host' : os.environ.get('COLLECTOR_FQDN'), 'port' : 5000, 'delay_after_init_and_peer_ups': 5}
+    else:
+        print('Env var COLLECTOR_FQDN not set. Exit')
+        sys.exit(1)
+    
     cfg_dict['router_data'] = cfg['router_data']
     cfg_dict['logging'] = cfg['logging']
 

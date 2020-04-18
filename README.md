@@ -8,22 +8,14 @@ This consumer reads MRT files of a router and sends natively in BMP format to a 
 
     Router --> MRT --> MRT2BMP --> OpenBMP Collector --> Kafka Message Bus --> MySQL Consumer
 
-Installation
-------------
-You can either run the code within the **git** directory or you can install it in your python path.
+### Env Vars
 
-> If you are going to run it within the **git** directory, see running instructions.
+> - `MRT_ROUTER` Hostname of MRT Router
+> - `COLLECTOR_HOST` Collector FQDN
 
-### Install Dependencies:
+### MRT File format
 
-    sudo pip install pyyaml
-    sudo apt-get install python-setuptools-git (for Ubuntu)
-
-### Install:
-
-    git clone https://github.com/OpenBMP/openbmp-mrt2bmp.git
-    cd openbmp-mrt2bmp
-    sudo python setup.py install
+> - `updates.2020-04-17.09:54:48.mrt`
 
 ### Running:
 
