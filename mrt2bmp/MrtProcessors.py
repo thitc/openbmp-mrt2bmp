@@ -271,7 +271,7 @@ class RouterProcessor:
     def __init__(self, router_name, directory_path, forward_queue, log_queue, cfg):
 
         # Regex for directory pattern to look for (YYYY-MM)
-        self._date_dir_regex = re.compile('[0-9]{4,4}\.[0-9]{2,2}')
+        self._date_dir_regex = re.compile(r'[0-9]{4,4}\.[0-9]{2,2}')
 
         self._cfg = cfg
         self._isToProcess = True
