@@ -68,28 +68,28 @@ def load_config(cfg_filename, LOG):
         with open(cfg_filename,'r') as yaml_file:
             cfg = yaml.load(yaml_file, Loader=yaml.FullLoader)
 
-        if 'collector' in cfg:
-            if 'host' not in cfg['collector']:
-                if LOG:
-                    LOG.error("Configuration is missing 'host' in collector section")
-                else:
-                    print ("Configuration is missing 'host' in collector section")
-                sys.exit(2)
+        # if 'collector' in cfg:
+        #     if 'host' not in cfg['collector']:
+        #         if LOG:
+        #             LOG.error("Configuration is missing 'host' in collector section")
+        #         else:
+        #             print ("Configuration is missing 'host' in collector section")
+        #         sys.exit(2)
 
-            if 'port' not in cfg['collector']:
-                if LOG:
-                    LOG.error("Configuration is missing 'port' in collector section, using default of 5000")
-                else:
-                    print ("Configuration is missing 'port' in collector section, using default of 5000")
+        #     if 'port' not in cfg['collector']:
+        #         if LOG:
+        #             LOG.error("Configuration is missing 'port' in collector section, using default of 5000")
+        #         else:
+        #             print ("Configuration is missing 'port' in collector section, using default of 5000")
 
-                cfg['collector']['port'] = 5000
+        #         cfg['collector']['port'] = 5000
 
-        else:
-            if LOG:
-                LOG.error("Configuration is missing 'collector' section.")
-            else:
-                print ("Configuration is missing 'collector' section.")
-            sys.exit(2)
+        # else:
+        #     if LOG:
+        #         LOG.error("Configuration is missing 'collector' section.")
+        #     else:
+        #         print ("Configuration is missing 'collector' section.")
+        #     sys.exit(2)
 
         if 'logging' not in cfg:
             if LOG:
@@ -149,13 +149,6 @@ def parse_cmd_args(argv):
 
     #Load default cfg
     cfg['cfg_filename'] = 'openbmp-mrt2bmp.yml'
-
-
-    if 'MRT_ROUTER' in os.environ:
-        cfg['router_name'] = os.environ.get('MRT_ROUTER')
-    else:
-        print('Env var MRT_ROUTER not set. Exit')
-        sys.exit(1)
 
 
     # try:
@@ -244,21 +237,49 @@ def main():
     cmd_cfg = parse_cmd_args(sys.argv)
     cfg = load_config(cmd_cfg['cfg_filename'], LOG)
 
-    router_name = cmd_cfg['router_name']
+
+    if 'MRT_ROUTER' in os.environ:
+        router_name = os.environ.get('MRT_ROUTER')
+    else:
+        print('Env var MRT_ROUTER not set. Exit')
+        sys.exit(1)
+
+    #router_name = cmd_cfg['router_name']
 
     # Shared dictionary between processes
     manager = Manager()
     cfg_dict = manager.dict()
     #cfg_dict['collector'] = cfg['collector'] 
 
+    #Set defaults
+    cfgCollectorPort = 5000
+    cfgStartupDelay = 5
+    cfgMaxQueueSize = 10000
+    cfgTimestampIntervalLimit = 20
+    cfgIgnoreTimestampIntervalAbnorm = True
+    cfgRouterDataPath = '/var/run/openbmp/router_data'
+
+    if 'COLLECTOR_PORT' in os.environ:
+        cfgCollectorPort = os.environ.get('COLLECTOR_FQDN')
+    if 'STARTUP_DELAY' in os.environ:
+        cfgStartupDelay = os.environ.get('STARTUP_DELAY')
+    if 'MAX_QUEUE_SIZE' in os.environ:
+        cfgMaxQueueSize = os.environ.get('MAXQUEUESIZE')
+    if 'TIMESTAMP_INTERVAL_LIMIT' in os.environ:
+        cfgTimestampIntervalLimit = os.environ.get('TIMESTAMP_INTERVAL_LIMIT')
+    if 'IGNORE_TIMESTAMP_INTERVAL_ABNORM' in os.environ:
+        cfgIgnoreTimestampIntervalAbnorm = os.environ.get('IGNORE_TIMESTAMP_INTERVAL_ABNORM')
+    if 'ROUTER_DATA_PATH' in os.environ:
+        cfgRouterDataPath = os.environ.get('ROUTER_DATA_PATH')
+
     if 'COLLECTOR_FQDN' in os.environ:
-        cfg_dict['collector'] = {'host' : os.environ.get('COLLECTOR_FQDN'), 'port' : 5000, 'delay_after_init_and_peer_ups': 5}
+        cfg_dict['collector'] = {'host' : os.environ.get('COLLECTOR_FQDN'), 'port' : cfgCollectorPort, 'delay_after_init_and_peer_ups': cfgStartupDelay}
     else:
         print('Env var COLLECTOR_FQDN not set. Exit')
         sys.exit(1)
     
-    cfg_dict['router_data'] = cfg['router_data']
-    cfg_dict['logging'] = cfg['logging']
+    #cfg_dict['router_data'] = cfg['router_data']
+    cfg_dict['router_data'] = {'master_directory_path' : cfgRouterDataPath, 'ignore_timestamp_interval_abnormality': cfgIgnoreTimestampIntervalAbnorm, 'timestamp_interval_limit': cfgTimestampIntervalLimit, 'max_queue_size': cfgMaxQueueSize}
 
     # Setup signal handlers
     signal.signal(signal.SIGTERM, signal_handler)
@@ -267,10 +288,19 @@ def main():
 
     # Setup the multiprocessing logging queue-
     log_queue = Queue()
-    cfg_logging = cfg_dict['logging']
+    cfg_logging = cfg['logging']
 
-    # Log file is named with router name.
-    cfg_logging['handlers']['file']['filename'] = "openbmp-mrt2bmp_" + router_name + ".log"
+    #Logging Level
+    if 'LOG_LEVEL' in os.environ:
+        cfg_logging['handlers']['console']['level'] = os.environ.get('LOG_LEVEL')
+        cfg_logging['loggers']['mrt_parser']['level'] = os.environ.get('LOG_LEVEL')
+        cfg_logging['loggers']['mrt_processors']['level'] = os.environ.get('LOG_LEVEL')
+        cfg_logging['loggers']['bmp_writer']['level'] = os.environ.get('LOG_LEVEL')
+        cfg_logging['loggers']['router_processor']['level'] = os.environ.get('LOG_LEVEL')
+        cfg_logging['loggers']['rib_processor']['level'] = os.environ.get('LOG_LEVEL')
+        cfg_logging['loggers']['updates_processor']['level'] = os.environ.get('LOG_LEVEL')
+        cfg_logging['loggers']['root']['level'] = os.environ.get('LOG_LEVEL')
+
     thread_logger = LoggerThread(log_queue, cfg_logging)
     thread_logger.start()
 
@@ -280,20 +310,20 @@ def main():
     # Create the mutex.
     sync_mutex = Lock()
 
-    rds = None
-    ris = None
+    # rds = None
+    # ris = None
 
-    global USE_ROUTE_VIEWS
-    if USE_ROUTE_VIEWS:
-        # Start the Router views data sync
-        rds = RouteDataSynchronizer(cfg_dict, log_queue, sync_mutex, router_name)
-        rds.start()
+    # global USE_ROUTE_VIEWS
+    # if USE_ROUTE_VIEWS:
+    #     # Start the Router views data sync
+    #     rds = RouteDataSynchronizer(cfg_dict, log_queue, sync_mutex, router_name)
+    #     rds.start()
 
-    global USE_RIPE
-    if USE_RIPE:
-        # Start the Ripe data sync
-        ris = RipeSynchronizer(cfg_dict, log_queue, sync_mutex, router_name)
-        ris.start()
+    # global USE_RIPE
+    # if USE_RIPE:
+    #     # Start the Ripe data sync
+    #     ris = RipeSynchronizer(cfg_dict, log_queue, sync_mutex, router_name)
+    #     ris.start()
 
     # Start the Router Views process
     rwp = RouteViewsProcessor(router_name, cfg_dict, log_queue, fwd_queue, sync_mutex)
@@ -315,13 +345,13 @@ def main():
         rwp.stop()
         time.sleep(1)
 
-    if rds is not None:
-        rds.stop()
-        time.sleep(1)
+    # if rds is not None:
+    #     rds.stop()
+    #     time.sleep(1)
 
-    if ris is not None:
-        ris.stop()
-        time.sleep(1)
+    # if ris is not None:
+    #     ris.stop()
+    #     time.sleep(1)
 
     manager.shutdown()
 

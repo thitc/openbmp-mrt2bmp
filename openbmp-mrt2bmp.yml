@@ -5,30 +5,30 @@
 #
 # Collector - Where to send the BMP forwarded messages
 #
-collector:
+#collector:
   # bmp-dev.openbmp.org
-  host: localhost  # Collector address
-  port: 5000     # Collector port number
-  delay_after_init_and_peer_ups: 5 # Delay in seconds to wait after sending the PEER_UP
+  #host: localhost  # Collector address
+  #port: 5000     # Collector port number
+  #delay_after_init_and_peer_ups: 5 # Delay in seconds to wait after sending the PEER_UP
 
 # Router views data config
-router_data:
-  master_directory_path: "/var/run/openbmp/router_data"   # Master directory of the routers data.
-  processed_directory_path: "processed_data" # Directory in which processed files will be stored.
-  ignore_timestamp_interval_abnormality: True # If program will ignore file timestamp intervals.
-  timestamp_interval_limit: 20 # Max number of minutes between two consecutive mrt files.
-  max_queue_size: 10000 # Max size of messages in queue to be written
+# router_data:
+#   master_directory_path: "/var/run/openbmp/router_data"   # Master directory of the routers data.
+#   #processed_directory_path: "processed_data" # Directory in which processed files will be stored.
+#   ignore_timestamp_interval_abnormality: True # If program will ignore file timestamp intervals.
+#   timestamp_interval_limit: 20 # Max number of minutes between two consecutive mrt files.
+#   max_queue_size: 10000 # Max size of messages in queue to be written
 
-  # Router views sync config
-  route_views_sync:
-    web_source_address: "http://routeviews.org" # Do not change !
-    max_download_queue_size: 1000
+#   # Router views sync config
+#   route_views_sync:
+#     web_source_address: "http://routeviews.org" # Do not change !
+#     max_download_queue_size: 1000
 
-  # Ripe sync config
-  ripe_sync:
-    web_source_address: "https://www.ripe.net/analyse/internet-measurements/routing-information-service-ris/ris-raw-data" # Do not change !
-    max_download_queue_size: 1000
-#
+#   # Ripe sync config
+#   ripe_sync:
+#     web_source_address: "https://www.ripe.net/analyse/internet-measurements/routing-information-service-ris/ris-raw-data" # Do not change !
+#     max_download_queue_size: 1000
+# #
 # Log settings
 #
 logging:
@@ -42,69 +42,69 @@ logging:
   handlers:
     console:
       class: logging.StreamHandler
-      level: DEBUG
+      level: INFO
       formatter: default
       stream: ext://sys.stdout
 
-    file:
-      class: logging.handlers.RotatingFileHandler
-      level: DEBUG
-      formatter: default
-      maxBytes: 20971520
-      backupCount: 10
-      encoding: utf8
-      filename: openbmp-mrt2bmp.log
+    # file:
+    #   class: logging.handlers.RotatingFileHandler
+    #   level: DEBUG
+    #   formatter: default
+    #   maxBytes: 20971520
+    #   backupCount: 10
+    #   encoding: utf8
+    #   filename: openbmp-mrt2bmp.log
 
   loggers:
     # MRT Parser log messages
     mrt_parser:
-      level: DEBUG
+      level: INFO
       handlers: [console]
       propagate: no
 
     # MRT Processors log messages
     mrt_processors:
-      level: DEBUG
+      level: INFO
       handlers: [console]
       propagate: no
 
     # BMP Writer log messages
     bmp_writer:
-      level: DEBUG
+      level: INFO
       handlers: [console]
       propagate: no
 
     # BMP Writer log messages
     router_processor:
-      level: DEBUG
+      level: INFO
       handlers: [console]
       propagate: no
 
     # BMP Writer log messages
     rib_processor:
-      level: DEBUG
+      level: INFO
       handlers: [console]
       propagate: no
 
     # BMP Writer log messages
     updates_processor:
-      level: DEBUG
+      level: INFO
       handlers: [console]
       propagate: no
 
     # MRT Parser log messages
     route_views_synchronizer:
-      level: DEBUG
+      level: INFO
       handlers: [console]
       propagate: no
 
     # MRT Parser log messages
     ripe_synchronizer:
-      level: DEBUG
+      level: INFO
       handlers: [console]
       propagate: no
 
     # General/main program messages
     root:
-      level: DEBUG
+      level: INFO
       handlers: [console]

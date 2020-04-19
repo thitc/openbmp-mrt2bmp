@@ -389,18 +389,24 @@ class BMP_Helper:
         return struct.pack("!B", REASON)
 
 
-def moveFileToTempDirectory(src_file_path, dst_dir_path):
+# def moveFileToTempDirectory(src_file_path, dst_dir_path):
 
+#     try:
+
+#         # Checks if dst directory exists. If not, then creates the directory structure.
+#         #if not os.path.isdir(dst_dir_path):
+#         #   os.makedirs(dst_dir_path)
+#         #shutil.move(src_file_path, dst_dir_path)
+#         os.remove(src_file_path)
+#         #pass
+
+
+#     except shutil.Error as e:
+#         print(e)
+#         pass
+
+def deleteMrtFile(src_file_path):
     try:
-
-        # Checks if dst directory exists. If not, then creates the directory structure.
-        #if not os.path.isdir(dst_dir_path):
-        #   os.makedirs(dst_dir_path)
-        #shutil.move(src_file_path, dst_dir_path)
         os.remove(src_file_path)
-        #pass
-
-
-    except shutil.Error as e:
-        print(e)
+    except:
         pass

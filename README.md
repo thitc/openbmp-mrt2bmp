@@ -1,5 +1,34 @@
 OpenBMP MRT2BMP
 ===============
+
+***
+~~~
+
+OpenBMP MRT2BMP code changes in this fork:
+
+- Python 3
+- Run as Docker container
+- Config YAML contains only logging settings (other settings via Env Vars)
+- Processed files are deleted (not moved)
+- MRT filename pattern changed to match BIRD format
+- RIPE and Route Views disabled
+- Logging File Handler removed
+- Config Filename hardcoded (contains only logging settings)
+- Only 1 MRT router can export to this script. Support for multiple routers disabled (run as sidecar)
+- MRT files must be stored in ROUTER_DATA_PATH w/o any subfolder; default path is /var/run/openbmp/router_data
+
+
+Use Case of this fork:
+
+- Run as sidecar container (Kubernetes) and process MRT files from BIRD Route Server
+
+! Code is modified to be used in temp showcase project and not production !
+
+... work in progress
+
+~~~
+***
+
 This consumer reads MRT files of a router and sends natively in BMP format to a remote collector continuously.
 
 > When you exit MRT2BMP, **router** and **peers** will be shown **down**.
@@ -10,12 +39,39 @@ This consumer reads MRT files of a router and sends natively in BMP format to a 
 
 ### Env Vars
 
-> - `MRT_ROUTER` Hostname of MRT Router
-> - `COLLECTOR_HOST` Collector FQDN
+> - `MRT_ROUTER` Hostname of MRT Router; mandatory
+> - `COLLECTOR_HOST` Collector FQDN; mandatory
+> - `COLLECTOR_PORT` Collector Port; optional, default = 5000
+> - `STARTUP_DELAY` Delay after init and peers up; optional, default = 5
+> - `MAX_QUEUE_SIZE` Max size of messages in queue to be written; optional, default = 10000
+> - `TIMESTAMP_INTERVAL_LIMIT` Max number of minutes between two consecutive mrt files; optional, default = 20
+> - `IGNORE_TIMESTAMP_INTERVAL_ABNORM` If program will ignore file timestamp intervals; optional, default = True
+> - `ROUTER_DATA_PATH` Master directory of the routers data; optional, default = /var/run/openbmp/router_data
+> - `LOG_LEVEL` Log Level; optional, default = INFO
 
 ### MRT File format
 
 > - `updates.2020-04-17.09:54:48.mrt`
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ### Running:
 

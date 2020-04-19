@@ -10,7 +10,7 @@ import datetime
 import traceback
 import struct
 from struct import calcsize, pack
-from mrt2bmp.HelperClasses import MessageBucket, moveFileToTempDirectory, BMP_Helper, BGP_Helper
+from mrt2bmp.HelperClasses import MessageBucket, deleteMrtFile, BMP_Helper, BGP_Helper
 from mrt2bmp.MrtParser import MrtParser
 from mrt2bmp.CollectorSender import BMPWriter
 from mrt2bmp.logger import init_mp_logger
@@ -277,7 +277,7 @@ class RouterProcessor:
         self._isToProcess = True
         self._router_name = router_name
         self._directory_path = directory_path
-        self._processed_directory_path = cfg['processed_directory_path']
+        #self._processed_directory_path = cfg['processed_directory_path']
 
         self._fwd_queue = forward_queue
 
@@ -287,7 +287,9 @@ class RouterProcessor:
         self._collector_id = None
         self._listOfRibAndUpdateFiles = []
 
-        self.working_dir = os.path.join(self._directory_path, self._router_name)
+        #self.working_dir = os.path.join(self._directory_path, self._router_name)
+        self.working_dir = self._directory_path
+        self.LOG.debug('Workdir set to %s', self.working_dir)
         if os.path.exists(os.path.join(self._directory_path, self._router_name, 'bgpdata')):
             self.working_dir = os.path.join(self._directory_path, self._router_name, 'bgpdata')
 
@@ -300,35 +302,39 @@ class RouterProcessor:
 
     def __collectListOfRibandUpdateFiles(self):
         self.LOG.debug("Using working dir %s" % self.working_dir)
+        listOfUpdates = []
+        listOfUpdates = os.listdir(self.working_dir)
+        self.LOG.debug("Found files in UPDATES: %s", os.listdir(self.working_dir))
+        self._listOfRibAndUpdateFiles = listOfUpdates
 
-        for d in os.listdir(self.working_dir):
+        # for d in os.listdir(self.working_dir):
 
-            if not self._date_dir_regex.match(d):
-                self.LOG.info("Skipping over directory %s" % d)
-                continue
-            else:
-                self.LOG.debug("Use directory %s" % d)
+        #     if not self._date_dir_regex.match(d):
+        #         self.LOG.info("Skipping over directory %s" % d)
+        #         continue
+        #     else:
+        #         self.LOG.debug("Use directory %s" % d)
 
-            if os.path.isdir(os.path.join(self.working_dir, d)):
-                listOfRibs = []
-                listOfUpdates = []
+        #     if os.path.isdir(os.path.join(self.working_dir, d)):
+        #         listOfRibs = []
+        #         listOfUpdates = []
 
-                rib_path = os.path.join(self.working_dir, d, "RIBS")
-                update_path = os.path.join(self.working_dir, d, "UPDATES")
+        #         rib_path = os.path.join(self.working_dir, d, "RIBS")
+        #         update_path = os.path.join(self.working_dir, d, "UPDATES")
 
-                if os.path.isdir(rib_path):
-                    self.LOG.debug("Found folder: RIBS")
-                    listOfRibs = os.listdir(rib_path)
-                    self.LOG.debug("Found files in RIBS: %s", os.listdir(rib_path))
-                    listOfRibs = [os.path.join(d,"RIBS",e) for e in listOfRibs]
+        #         if os.path.isdir(rib_path):
+        #             self.LOG.debug("Found folder: RIBS")
+        #             listOfRibs = os.listdir(rib_path)
+        #             self.LOG.debug("Found files in RIBS: %s", os.listdir(rib_path))
+        #             listOfRibs = [os.path.join(d,"RIBS",e) for e in listOfRibs]
 
-                if os.path.isdir(update_path):
-                    self.LOG.debug("Found folder: UPDATES")
-                    listOfUpdates = os.listdir(update_path)
-                    self.LOG.debug("Found files in UPDATES: %s", os.listdir(update_path))
-                    listOfUpdates = [os.path.join(d, "UPDATES", e) for e in listOfUpdates]
+        #         if os.path.isdir(update_path):
+        #             self.LOG.debug("Found folder: UPDATES")
+        #             listOfUpdates = os.listdir(update_path)
+        #             self.LOG.debug("Found files in UPDATES: %s", os.listdir(update_path))
+        #             listOfUpdates = [os.path.join(d, "UPDATES", e) for e in listOfUpdates]
 
-                self._listOfRibAndUpdateFiles = self._listOfRibAndUpdateFiles + listOfRibs + listOfUpdates
+        #         self._listOfRibAndUpdateFiles = self._listOfRibAndUpdateFiles + listOfRibs + listOfUpdates
 
         # Create tuple list from list of ribs and updates.
         sorting_list = []
@@ -338,7 +344,7 @@ class RouterProcessor:
                 # Parse date of the file.
                 tokens = f.split('.')
                 try:
-                    date = tokens[2] + tokens[3]
+                    date = tokens[1] + tokens[2]
                     date = datetime.datetime(int(date[0:4]), int(date[5:7]), int(date[8:10]), int(date[10:12]), int(date[13:15]), int(date[16:18]))
                     sorting_list.append((date, f))
                 except:
@@ -534,7 +540,8 @@ class RouterProcessor:
                         rp.processRibFile()
 
                     self.LOG.debug('Delete RIB file: %s', os.path.join(self.working_dir, f[1]))
-                    moveFileToTempDirectory(os.path.join(self.working_dir, f[1]), os.path.join(self._processed_directory_path, self._router_name, "RIBS"))
+                    #moveFileToTempDirectory(os.path.join(self.working_dir, f[1]), os.path.join(self._processed_directory_path, self._router_name, "RIBS"))
+                    deleteMrtFile(os.path.join(self.working_dir, f[1]))
 
                 elif "updates" in f[1]:
 
@@ -545,7 +552,8 @@ class RouterProcessor:
                         traceback.print_exc()
 
                     self.LOG.debug('Delete UPDATES file: %s', os.path.join(self.working_dir, f[1]))
-                    moveFileToTempDirectory(os.path.join(self.working_dir, f[1]), os.path.join(self._processed_directory_path, self._router_name, "UPDATES"))
+                    #moveFileToTempDirectory(os.path.join(self.working_dir, f[1]), os.path.join(self._processed_directory_path, self._router_name, "UPDATES"))
+                    deleteMrtFile(os.path.join(self.working_dir, f[1]))
 
                 self.LOG.info("-- %s is ended" % f[1])
 
@@ -584,9 +592,9 @@ class RouteViewsProcessor(multiprocessing.Process):
         self.LOG = init_mp_logger("mrt_processors", self._log_queue)
 
         # Parse name of router from router directory name.
-        router_path = os.path.join(self._dir_path, self.router_name)
-        if not os.path.isdir(router_path):
-            self.LOG.error("%s is not a directory !" % router_path)
+        #router_path = os.path.join(self._dir_path, self.router_name)
+        if not os.path.isdir(self._dir_path):
+            self.LOG.error("%s is not a directory !" % self._dir_path)
             sys.exit(2)
 
         try:
