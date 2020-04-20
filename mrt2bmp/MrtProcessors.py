@@ -46,7 +46,8 @@ class RibProcessor():
         self._forward_queue = forward_queue
         self._log_queue = log_queue
 
-        self.working_dir = os.path.join(self._directory_path, self._router_name)
+        #self.working_dir = os.path.join(self._directory_path, self._router_name)
+        self.working_dir = self._directory_path
         if os.path.exists(os.path.join(self._directory_path, self._router_name, 'bgpdata')):
             self.working_dir = os.path.join(self._directory_path, self._router_name, 'bgpdata')
 
@@ -82,6 +83,7 @@ class RibProcessor():
                     if bucket_key in self.message_bucket_dict:
 
                         # Add the prefix to the corresponding MessageBucket.
+                        print(raw_prefix_nlri)
                         self.message_bucket_dict[bucket_key].addPrefix(raw_prefix_nlri)
 
                     else:
@@ -187,7 +189,8 @@ class UpdateProcessor():
         self._peer_index_table= None
         self.LOG = init_mp_logger("updates_processor", self._log_queue)
 
-        self.working_dir = os.path.join(self._directory_path, self._router_name)
+        #self.working_dir = os.path.join(self._directory_path, self._router_name)
+        self.working_dir = self._directory_path
         if os.path.exists(os.path.join(self._directory_path, self._router_name, 'bgpdata')):
             self.working_dir = os.path.join(self._directory_path, self._router_name, 'bgpdata')
 
@@ -254,7 +257,7 @@ class UpdateProcessor():
 
         # If router_pit.json exists, then load peer index table.
         path = os.path.join(self.working_dir, 'router_pit.json')
-
+        print(self.working_dir)
         if os.path.isfile(path):
             with open(path) as data_file:
                 self._peer_index_table = json.load(data_file)
@@ -304,7 +307,7 @@ class RouterProcessor:
         self.LOG.debug("Using working dir %s" % self.working_dir)
         listOfUpdates = []
         listOfUpdates = os.listdir(self.working_dir)
-        self.LOG.debug("Found files in UPDATES: %s", os.listdir(self.working_dir))
+        self.LOG.debug("Found files workdir: %s", os.listdir(self.working_dir))
         self._listOfRibAndUpdateFiles = listOfUpdates
 
         # for d in os.listdir(self.working_dir):
@@ -439,6 +442,7 @@ class RouterProcessor:
         return_list = []
 
         for peer in peer_list:
+            self.LOG.debug('getPeerMessages -> Peer: %s', peer)
 
             if peer["bgp_id"] != "0.0.0.0":
 
@@ -492,6 +496,8 @@ class RouterProcessor:
 
         qm = common_header + sysDescr_data + sysName_data
 
+        self.LOG.debug('getInitMessage for Router: %s', self._router_name)
+
         return qm
 
     def getTerminationMessage(self):
@@ -536,8 +542,8 @@ class RouterProcessor:
 
                     rp = RibProcessor(f[1], self._directory_path, self._router_name, self._collector_id, self._fwd_queue, self._log_queue)
 
-                    if is_first_run:
-                        rp.processRibFile()
+                    #if is_first_run:
+                    rp.processRibFile()
 
                     self.LOG.debug('Delete RIB file: %s', os.path.join(self.working_dir, f[1]))
                     #moveFileToTempDirectory(os.path.join(self.working_dir, f[1]), os.path.join(self._processed_directory_path, self._router_name, "RIBS"))

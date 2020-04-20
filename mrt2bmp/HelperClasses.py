@@ -91,7 +91,7 @@ class BGP_Helper:
         """
 
         # Marker
-        marker = '\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF'
+        marker = b'\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF'
 
         # Length
         length = struct.pack("!H", data_length + 19)
@@ -407,6 +407,7 @@ class BMP_Helper:
 
 def deleteMrtFile(src_file_path):
     try:
+        pass
         os.remove(src_file_path)
     except:
         pass

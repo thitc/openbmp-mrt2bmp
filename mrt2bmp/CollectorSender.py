@@ -92,12 +92,14 @@ class BMPWriter(multiprocessing.Process):
             # Send INIT message.
             sent = False
             while not sent:
+                self.LOG.debug('BMP Send INIT Message: %s', self.init_message)
                 sent = self.send(self.init_message)
 
             # Send PEER UP messages.
             for m in self.peer_up_messages:
                 sent = False
                 while not sent:
+                    self.LOG.debug('BMP Send Peer-UP Message: %s', m)
                     sent = self.send(m)
 
             # Waits for specified time in config after INIT and PEER UP messages.
@@ -118,7 +120,7 @@ class BMPWriter(multiprocessing.Process):
             :return: True if sent, False if not sent
         """
         sent = False
-
+        self.LOG.debug('BMP send message: %s', msg)
         try:
             self._sock.sendall(msg)
             sent = True

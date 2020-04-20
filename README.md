@@ -16,11 +16,14 @@ OpenBMP MRT2BMP code changes in this fork:
 - Config Filename hardcoded (contains only logging settings)
 - Only 1 MRT router can export to this script. Support for multiple routers disabled (run as sidecar)
 - MRT files must be stored in ROUTER_DATA_PATH w/o any subfolder; default path is /var/run/openbmp/router_data
+- MRT prefix is rib ONLY; process only peer index table (is_first_run in processRouteView disabled)
 
 
 Use Case of this fork:
 
 - Run as sidecar container (Kubernetes) and process MRT files from BIRD Route Server
+- Process only peer index table from RIB
+
 
 ! Code is modified to be used in temp showcase project and not production !
 
@@ -40,7 +43,7 @@ This consumer reads MRT files of a router and sends natively in BMP format to a 
 ### Env Vars
 
 > - `MRT_ROUTER` Hostname of MRT Router; mandatory
-> - `COLLECTOR_HOST` Collector FQDN; mandatory
+> - `COLLECTOR_FQDN` Collector FQDN; mandatory
 > - `COLLECTOR_PORT` Collector Port; optional, default = 5000
 > - `STARTUP_DELAY` Delay after init and peers up; optional, default = 5
 > - `MAX_QUEUE_SIZE` Max size of messages in queue to be written; optional, default = 10000
@@ -51,7 +54,7 @@ This consumer reads MRT files of a router and sends natively in BMP format to a 
 
 ### MRT File format
 
-> - `updates.2020-04-17.09:54:48.mrt`
+> - `rib.2020-04-17.09:54:48.mrt`
 
 
 
