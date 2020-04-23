@@ -10,7 +10,7 @@ import datetime
 import traceback
 import struct
 from struct import calcsize, pack
-from mrt2bmp.HelperClasses import MessageBucket, deleteMrtFile, BMP_Helper, BGP_Helper
+from mrt2bmp.HelperClasses import MessageBucket, deleteMrtFile, BMP_Helper, BGP_Helper, cleanupMrtDir
 from mrt2bmp.MrtParser import MrtParser
 from mrt2bmp.CollectorSender import BMPWriter
 from mrt2bmp.logger import init_mp_logger
@@ -606,30 +606,39 @@ class RouteViewsProcessor(multiprocessing.Process):
         try:
             self.LOG.info("- %s is started" % str(self.router_name))
 
+            disabled = False
+            if 'DISABLED' in os.environ:
+                if os.environ.get('DISABLED').lower() == 'true':
+                    disabled = True
+
             is_first_run = True
 
             while not self.stopped():
 
-                self._sync_mutex.acquire()
+                if disabled:
+                    self.LOG.debug('MRT2BMP disabled. Cleaning up folder: %s', self._dir_path)
+                    cleanupMrtDir(self._dir_path)
+                else:
+                    self._sync_mutex.acquire()
 
-                # Process the router by creating a 'RouterProcessor'
-                rp = RouterProcessor(str(self.router_name), self._dir_path, self._fwd_queue, self._log_queue, self._cfg_router)
+                    # Process the router by creating a 'RouterProcessor'
+                    rp = RouterProcessor(str(self.router_name), self._dir_path, self._fwd_queue, self._log_queue, self._cfg_router)
 
-                if self._collector_writer is None and rp.isToProcess():
-                    self._collector_writer = BMPWriter(self.cfg, self._fwd_queue, self._log_queue)
-                    self._collector_writer.setInitialMessages(rp.getInitMessage(), rp.getPeerMessages(),
-                                                              rp.getTerminationMessage())
+                    if self._collector_writer is None and rp.isToProcess():
+                        self._collector_writer = BMPWriter(self.cfg, self._fwd_queue, self._log_queue)
+                        self._collector_writer.setInitialMessages(rp.getInitMessage(), rp.getPeerMessages(),
+                                                                rp.getTerminationMessage())
 
-                    self._collector_writer.start()
+                        self._collector_writer.start()
 
-                if self._collector_writer is not None and rp.isToProcess():
-                    self._collector_writer.setInitialMessages(rp.getInitMessage(), rp.getPeerMessages(), rp.getTerminationMessage())
+                    if self._collector_writer is not None and rp.isToProcess():
+                        self._collector_writer.setInitialMessages(rp.getInitMessage(), rp.getPeerMessages(), rp.getTerminationMessage())
 
-                    rp.processRouteView(is_first_run)
+                        rp.processRouteView(is_first_run)
 
-                    is_first_run = False
+                        is_first_run = False
 
-                self._sync_mutex.release()
+                    self._sync_mutex.release()
 
                 # Waits for 30 seconds and runs the route views processor again.
                 self.LOG.debug('Nothing to do... Sleeping for 30 seconds... zZzZz')

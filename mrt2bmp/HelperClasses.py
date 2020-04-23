@@ -2,6 +2,7 @@ import shutil
 import os
 import socket
 import struct
+import glob
 
 
 class MessageBucket():
@@ -411,3 +412,12 @@ def deleteMrtFile(src_file_path):
         os.remove(src_file_path)
     except:
         pass
+
+def cleanupMrtDir(mrt_folder_path):
+    files = glob.glob(mrt_folder_path + '/*.mrt')
+
+    for f in files:
+        try:
+            os.remove(f)
+        except:
+            pass

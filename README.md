@@ -51,6 +51,7 @@ This consumer reads MRT files of a router and sends natively in BMP format to a 
 > - `IGNORE_TIMESTAMP_INTERVAL_ABNORM` If program will ignore file timestamp intervals; optional, default = True
 > - `ROUTER_DATA_PATH` Master directory of the routers data; optional, default = /var/run/openbmp/router_data
 > - `LOG_LEVEL` Log Level; optional, default = INFO
+> - `DISABLED` Disable MRT2BMP, MRT files are just deleted and not send to collector if set to True; optional, default = False
 
 ### MRT File format
 
